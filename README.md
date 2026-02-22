@@ -90,9 +90,10 @@ python ab_testing_analysis.py
 ## 📊 Visual Results
 
 ### Purchase Distribution
-![Purchase Distribution](./images/fig1_purchase_distribution.png)
+![Purchase Distribution](https://raw.githubusercontent.com/rabia-ASIK/AB-Testing-Bidding-Comparison/main/images/fig1_purchase_distribution.png)
 
 ### Mean Purchase Comparison
-![Mean Purchase Comparison](./images/fig2_mean_purchase.png)
+![Mean Purchase Comparison](https://raw.githubusercontent.com/rabia-ASIK/AB-Testing-Bidding-Comparison/main/images/fig2_mean_purchase.png)
+
 
 
