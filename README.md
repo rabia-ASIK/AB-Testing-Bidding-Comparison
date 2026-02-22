@@ -88,10 +88,13 @@ pip install -r requirements.txt
 python ab_testing_analysis.py
 
 
-📊 Visual Results
-Purchase Distribution
-<img width="674" height="426" alt="fig1_purchase_distribution png" src="https://github.com/user-attachments/assets/8a701e41-3a2d-4a5f-9222-986ed61a073c" />
-Mean Purchase Comparison
-<img width="676" height="448" alt="fig2_mean_purchase png" src="https://github.com/user-attachments/assets/183b61ca-46aa-425b-a658-cb55321cd286" />
+## 📊 Visual Results
+
+### Purchase Distribution
+![Purchase Distribution](images/fig1_purchase_distribution.png)
+
+### Mean Purchase Comparison
+![Mean Purchase Comparison](images/fig2_mean_purchase.png)
+
 
 
