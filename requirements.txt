@@ -1,4 +1,5 @@
 pandas
-openpyxl
 scipy
-tabulate
+matplotlib
+openpyxl
+statsmodels
