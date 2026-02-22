@@ -45,3 +45,5 @@ It is recommended to continue with the current strategy and consider re-running 
 - SciPy
 - A/B Testing
 
+**Advanced Stats:** Cohen’s d = 0.21 (small effect), post-hoc power = 0.15 (low).  
+This indicates the experiment is underpowered; increasing sample size / duration is recommended.
