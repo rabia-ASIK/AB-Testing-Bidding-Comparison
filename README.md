@@ -87,3 +87,10 @@ Although the test group shows a slightly higher average Purchase, the effect siz
 pip install -r requirements.txt
 python ab_testing_analysis.py
 
+## 📊 Visual Results
+
+### Purchase Distribution
+![Purchase Distribution](https://raw.githubusercontent.com/rabia-ASIK/AB-Testing-Bidding-Comparison/main/images/fig1_purchase_distribution.png)
+
+### Mean Purchase Comparison
+![Mean Purchase Comparison](https://raw.githubusercontent.com/rabia-ASIK/AB-Testing-Bidding-Comparison/main/images/fig2_mean_purchase.png)
