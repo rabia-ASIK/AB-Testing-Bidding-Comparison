@@ -362,6 +362,42 @@ def main() -> None:
     )
     write_report_md(means, a, outcome, cohens_d, power, power_note)
 
+# =====================================================
+    # VISUALIZATION FOR MEDIUM ARTICLE
+    # =====================================================
 
+    import matplotlib.pyplot as plt
+
+    # Purchase değerlerini ayır
+    control_purchase = df[df["group"] == "control"]["Purchase"]
+    test_purchase = df[df["group"] == "test"]["Purchase"]
+
+    # -------------------------
+    # 1) Histogram: Distribution Comparison
+    # -------------------------
+    plt.figure(figsize=(8, 5))
+    plt.hist(control_purchase, bins=15, alpha=0.6, label="Control (Max Bidding)")
+    plt.hist(test_purchase, bins=15, alpha=0.6, label="Test (Average Bidding)")
+    plt.title("Purchase Distribution: Control vs Test")
+    plt.xlabel("Purchase")
+    plt.ylabel("Frequency")
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+    # -------------------------
+    # 2) Bar Chart: Mean Comparison
+    # -------------------------
+    means = df.groupby("group")["Purchase"].mean()
+
+    plt.figure(figsize=(6, 4))
+    means.plot(kind="bar")
+    plt.title("Average Purchase by Bidding Strategy")
+    plt.xlabel("Group")
+    plt.ylabel("Average Purchase")
+    plt.xticks(rotation=0)
+    plt.tight_layout()
+    plt.show()
 if __name__ == "__main__":
     main()
+
