@@ -94,3 +94,4 @@ python ab_testing_analysis.py
 
 ### Mean Purchase Comparison
 ![Mean Purchase Comparison](images/fig2_mean_purchase.png)
+
