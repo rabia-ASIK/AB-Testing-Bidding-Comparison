@@ -88,13 +88,14 @@ pip install -r requirements.txt
 python ab_testing_analysis.py
 
 
-## 📊 Visual Results
+📊 Visual Results
 
-### Purchase Distribution
+Purchase Distribution
 ![Purchase Distribution](images/fig1_purchase_distribution.png)
 
-### Mean Purchase Comparison
+Mean Purchase Comparison
 ![Mean Purchase Comparison](images/fig2_mean_purchase.png)
+
 
 
 
