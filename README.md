@@ -4,12 +4,12 @@
 This project analyzes an A/B test conducted to compare two Facebook ad bidding strategies:
 **Maximum Bidding** (control group) and **Average Bidding** (test group).
 
-The goal is to determine whether the newly introduced *Average Bidding* strategy leads to a statistically and practically significant improvement in **Purchase** conversions.
+The goal is to determine whether the newly introduced **Average Bidding** strategy leads to a statistically and practically significant improvement in **Purchase** conversions.
 
 ---
 
 ## 🧠 Business Problem
-Facebook introduced *Average Bidding* as an alternative to *Maximum Bidding*.  
+Facebook introduced **Average Bidding** as an alternative to **Maximum Bidding**.  
 A company (bombabomba.com) ran a **1-month A/B test** to evaluate whether the new bidding strategy improves conversion performance.
 
 The primary success metric is **Purchase**, representing completed purchases after ad clicks.
@@ -17,11 +17,11 @@ The primary success metric is **Purchase**, representing completed purchases aft
 ---
 
 ## 📊 Dataset
-- Source: `ab_testing.xlsx`
-- Sheets:
-  - **Control Group** → Maximum Bidding
-  - **Test Group** → Average Bidding
-- Observations: 40 per group
+- **Source:** `ab_testing.xlsx`
+- **Sheets:**
+  - Control Group → Maximum Bidding
+  - Test Group → Average Bidding
+- **Observations:** 40 per group
 
 ### Features
 | Feature | Description |
@@ -37,24 +37,24 @@ The primary success metric is **Purchase**, representing completed purchases aft
 The analysis follows a structured A/B testing workflow:
 
 1. **Data Quality Checks**
-   - Shape, missing values, data types
+   - Shape, missing values, data types  
 2. **Exploratory Analysis**
-   - Purchase means by group
+   - Purchase means by group  
 3. **Assumption Checks**
    - Shapiro-Wilk test (normality)
-   - Levene test (variance homogeneity)
+   - Levene test (variance homogeneity)  
 4. **Hypothesis Testing**
-   - Independent two-sample t-test (parametric)
+   - Independent two-sample t-test (parametric)  
 5. **Advanced Statistics**
    - Effect size (Cohen’s d)
-   - Post-hoc power analysis
+   - Post-hoc power analysis  
 6. **Business Recommendation**
 
 ---
 
 ## 📐 Hypotheses
-- **H0**: The average Purchase of control and test groups are equal.
-- **H1**: The average Purchase of control and test groups are different.
+- **H0:** The average Purchase of control and test groups are equal.
+- **H1:** The average Purchase of control and test groups are different.
 
 ---
 
@@ -62,15 +62,15 @@ The analysis follows a structured A/B testing workflow:
 - **Purchase Mean**
   - Control: 550.89
   - Test: 582.11
-- **p-value**: 0.3493 → *Not statistically significant*
-- **Effect Size (Cohen’s d)**: 0.21 → *Small effect*
-- **Power**: 0.15 → *Low statistical power*
+- **p-value:** 0.3493 → *Not statistically significant*
+- **Effect Size (Cohen’s d):** 0.21 → *Small effect*
+- **Power:** 0.15 → *Low statistical power*
 
 ---
 
 ## ✅ Conclusion
 No statistically significant difference was detected between the two bidding strategies.  
-Although the test group shows a slightly higher average Purchase, the effect size is small and the test is underpowered.
+Although the test group shows a slightly higher average Purchase, the effect size is small and the experiment is underpowered.
 
 ---
 
@@ -87,12 +87,11 @@ Although the test group shows a slightly higher average Purchase, the effect siz
 pip install -r requirements.txt
 python ab_testing_analysis.py
 
-## 📊 Visual Results
 
-### Purchase Distribution
-![Purchase Distribution](images/fig1_purchase_distribution.png)
-
-### Mean Purchase Comparison
-![Mean Purchase Comparison](images/fig2_mean_purchase.png)
+📊 Visual Results
+Purchase Distribution
+<img width="674" height="426" alt="fig1_purchase_distribution png" src="https://github.com/user-attachments/assets/8a701e41-3a2d-4a5f-9222-986ed61a073c" />
+Mean Purchase Comparison
+<img width="676" height="448" alt="fig2_mean_purchase png" src="https://github.com/user-attachments/assets/183b61ca-46aa-425b-a658-cb55321cd286" />
 
 
