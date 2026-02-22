@@ -25,7 +25,7 @@ The primary success metric is **Purchase**, representing completed purchases aft
 
 ### Features
 | Feature | Description |
-|-------|------------|
+|--------|------------|
 | Impression | Number of ad impressions |
 | Click | Number of ad clicks |
 | Purchase | Number of purchases |
@@ -37,17 +37,17 @@ The primary success metric is **Purchase**, representing completed purchases aft
 The analysis follows a structured A/B testing workflow:
 
 1. **Data Quality Checks**
-   - Shape, missing values, data types  
+   - Shape, missing values, data types
 2. **Exploratory Analysis**
-   - Purchase means by group  
+   - Purchase means by group
 3. **Assumption Checks**
    - Shapiro-Wilk test (normality)
-   - Levene test (variance homogeneity)  
+   - Levene test (variance homogeneity)
 4. **Hypothesis Testing**
-   - Independent two-sample t-test (parametric)  
+   - Independent two-sample t-test
 5. **Advanced Statistics**
    - Effect size (Cohen’s d)
-   - Post-hoc power analysis  
+   - Post-hoc power analysis
 6. **Business Recommendation**
 
 ---
@@ -86,14 +86,4 @@ Although the test group shows a slightly higher average Purchase, the effect siz
 ```bash
 pip install -r requirements.txt
 python ab_testing_analysis.py
-
-```markdown
-## 📊 Visual Results
-
-### Purchase Distribution
-![Purchase Distribution](https://raw.githubusercontent.com/rabia-ASIK/AB-Testing-Bidding-Comparison/main/images/fig1_purchase_distribution.png)
-
-### Mean Purchase Comparison
-![Mean Purchase Comparison](https://raw.githubusercontent.com/rabia-ASIK/AB-Testing-Bidding-Comparison/main/images/fig2_mean_purchase.png)
-
 
