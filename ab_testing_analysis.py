@@ -1,20 +1,18 @@
 """
 A/B Testing Case Study — Bidding Strategy Comparison (Maximum vs Average)
 
-This script solves an end-to-end A/B testing case:
-- Control group uses Maximum Bidding
-- Test group uses Average Bidding
-- Primary metric: Purchase
+- Loads Control/Test sheets from ab_testing.xlsx
+- Performs data quality checks + descriptive stats
+- Checks assumptions: Shapiro (normality), Levene (variance homogeneity)
+- Chooses the correct statistical test:
+  - Independent t-test (equal variances) / Welch t-test (unequal variances)
+  - Mann–Whitney U (if normality fails)
+- Prints a clean console summary
+- Writes a GitHub-friendly report.md
 
-Project Tasks (mapped to code sections):
-Task 1 — Data Preparation & Exploration
-Task 2 — Hypothesis Definition
-Task 3 — Assumption Checks + Statistical Testing
-Task 4 — Interpretation + Business Recommendation
-
-Outputs:
-- Clean console summary
-- report.md (GitHub-friendly report)
+Advanced (portfolio upgrade):
+- Effect size: Cohen's d
+- Post-hoc power analysis (optional, requires statsmodels)
 
 Author: Rabia
 """
@@ -24,8 +22,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, Tuple
 
+import numpy as np
 import pandas as pd
 from scipy.stats import shapiro, levene, ttest_ind, mannwhitneyu
+
+# Optional dependency for power analysis
+try:
+    from statsmodels.stats.power import TTestIndPower
+    STATS_MODELS_AVAILABLE = True
+except Exception:
+    STATS_MODELS_AVAILABLE = False
 
 
 # =========================
@@ -39,39 +45,30 @@ ALPHA = 0.05
 
 
 # =========================
-# TASK 1 — Data Preparation & Exploration
+# TASK 1 — Load + EDA
 # =========================
 def load_data(file_path: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Load control and test group data from Excel sheets."""
     control_df = pd.read_excel(file_path, sheet_name=SHEET_CONTROL)
     test_df = pd.read_excel(file_path, sheet_name=SHEET_TEST)
     return control_df, test_df
 
 
 def validate_schema(control: pd.DataFrame, test: pd.DataFrame) -> None:
-    """Ensure both groups have the same schema and the metric exists."""
     if list(control.columns) != list(test.columns):
-        raise ValueError(
-            "Control and Test sheets have different columns. "
-            "Please verify the Excel sheets."
-        )
+        raise ValueError("Control and Test sheets have different columns. Check Excel sheets.")
     if METRIC not in control.columns:
-        raise ValueError(f"Metric column '{METRIC}' not found in the dataset.")
+        raise ValueError(f"Metric column '{METRIC}' not found.")
 
 
 def quick_profile(df: pd.DataFrame) -> Dict[str, object]:
-    """Lightweight EDA summary for reporting (shape, missing, dtypes, descriptives)."""
     return {
         "shape": df.shape,
-        "columns": list(df.columns),
         "missing": df.isna().sum().to_dict(),
         "dtypes": df.dtypes.astype(str).to_dict(),
-        "describe": df.describe().T,
     }
 
 
 def combine_groups(control: pd.DataFrame, test: pd.DataFrame) -> pd.DataFrame:
-    """Add group labels and concatenate into one dataframe."""
     c = control.copy()
     t = test.copy()
     c["group"] = "control"
@@ -80,12 +77,11 @@ def combine_groups(control: pd.DataFrame, test: pd.DataFrame) -> pd.DataFrame:
 
 
 def purchase_means(df: pd.DataFrame) -> pd.Series:
-    """Compute mean Purchase by group."""
     return df.groupby("group")[METRIC].mean()
 
 
 # =========================
-# TASK 3 — Assumptions + Test Selection
+# TASK 3 — Assumptions
 # =========================
 @dataclass
 class Assumptions:
@@ -95,7 +91,7 @@ class Assumptions:
 
     @property
     def normality_ok(self) -> bool:
-        return (self.shapiro_control_p > ALPHA) and (self.shapiro_test_p > ALPHA)
+        return self.shapiro_control_p > ALPHA and self.shapiro_test_p > ALPHA
 
     @property
     def equal_variances(self) -> bool:
@@ -103,7 +99,6 @@ class Assumptions:
 
 
 def check_assumptions(df: pd.DataFrame) -> Assumptions:
-    """Shapiro-Wilk normality test (per group) + Levene variance homogeneity."""
     control_vals = df.loc[df["group"] == "control", METRIC]
     test_vals = df.loc[df["group"] == "test", METRIC]
 
@@ -118,6 +113,9 @@ def check_assumptions(df: pd.DataFrame) -> Assumptions:
     )
 
 
+# =========================
+# TASK 3 — Hypothesis Test
+# =========================
 @dataclass
 class TestOutcome:
     test_name: str
@@ -127,23 +125,12 @@ class TestOutcome:
     recommendation: str
 
 
-def run_hypothesis_test(df: pd.DataFrame, assumptions: Assumptions) -> TestOutcome:
-    """
-    TASK 2 + TASK 3
-    Hypotheses:
-      H0: mean(Purchase_control) = mean(Purchase_test)
-      H1: mean(Purchase_control) != mean(Purchase_test)
-
-    Select test based on assumptions:
-      - Independent two-sample t-test if normality OK and variances equal
-      - Welch t-test if normality OK and variances unequal
-      - Mann–Whitney U if normality fails
-    """
+def run_hypothesis_test(df: pd.DataFrame, a: Assumptions) -> TestOutcome:
     control_vals = df.loc[df["group"] == "control", METRIC]
     test_vals = df.loc[df["group"] == "test", METRIC]
 
-    if assumptions.normality_ok:
-        if assumptions.equal_variances:
+    if a.normality_ok:
+        if a.equal_variances:
             res = ttest_ind(control_vals, test_vals, equal_var=True)
             test_name = "Independent two-sample t-test (equal variances)"
         else:
@@ -163,27 +150,23 @@ def run_hypothesis_test(df: pd.DataFrame, assumptions: Assumptions) -> TestOutco
     else:
         decision = f"Fail to reject H0 (p ≥ {ALPHA}) → no statistically significant difference"
 
-    # TASK 4 — Business recommendation
     control_mean = float(control_vals.mean())
     test_mean = float(test_vals.mean())
 
     if reject:
         if test_mean > control_mean:
             recommendation = (
-                "A statistically significant improvement was detected in the Test group. "
-                "Consider gradually rolling out Average Bidding, and validate the uplift across key segments "
-                "(e.g., device, geography, new vs returning users)."
+                "A statistically significant uplift exists for Average Bidding (test). "
+                "Consider gradual rollout and validate by segments."
             )
         else:
             recommendation = (
-                "A statistically significant improvement was detected in the Control group. "
-                "Continue with Maximum Bidding and investigate why Average Bidding underperformed."
+                "Control outperforms significantly. Keep Maximum Bidding and investigate the cause."
             )
     else:
         recommendation = (
-            "No statistically significant difference was detected between bidding strategies. "
-            "Maintain the current approach. To strengthen confidence, rerun the experiment with a larger sample "
-            "and/or longer duration, and perform segment-level analysis."
+            "No statistically significant difference. Keep current approach. "
+            "Consider longer test / larger sample and segment-based analysis."
         )
 
     return TestOutcome(
@@ -196,17 +179,71 @@ def run_hypothesis_test(df: pd.DataFrame, assumptions: Assumptions) -> TestOutco
 
 
 # =========================
-# REPORTING (Console + Markdown)
+# ADVANCED — Cohen's d + Power
+# =========================
+def calculate_cohens_d(control_vals: pd.Series, test_vals: pd.Series) -> float:
+    c = np.asarray(control_vals, dtype=float)
+    t = np.asarray(test_vals, dtype=float)
+
+    mean_c, mean_t = np.mean(c), np.mean(t)
+    std_c, std_t = np.std(c, ddof=1), np.std(t, ddof=1)
+    n_c, n_t = len(c), len(t)
+
+    pooled = np.sqrt(((n_c - 1) * std_c**2 + (n_t - 1) * std_t**2) / (n_c + n_t - 2))
+    if pooled == 0:
+        return 0.0
+    return (mean_t - mean_c) / pooled
+
+
+def interpret_cohens_d(d: float) -> str:
+    ad = abs(d)
+    if ad < 0.2:
+        return "Very small"
+    if ad < 0.5:
+        return "Small"
+    if ad < 0.8:
+        return "Medium"
+    return "Large"
+
+
+def calculate_posthoc_power(control_vals: pd.Series, test_vals: pd.Series) -> Tuple[float | None, str]:
+    if not STATS_MODELS_AVAILABLE:
+        return None, "statsmodels not installed → power analysis skipped"
+
+    d = calculate_cohens_d(control_vals, test_vals)
+    analysis = TTestIndPower()
+    power = analysis.solve_power(
+        effect_size=abs(d),
+        nobs1=len(control_vals),
+        alpha=ALPHA,
+        ratio=len(test_vals) / len(control_vals),
+        alternative="two-sided",
+    )
+    return float(power), "ok"
+
+
+def interpret_power(power: float) -> str:
+    if power < 0.5:
+        return "Low"
+    if power < 0.8:
+        return "Moderate"
+    return "Good"
+
+
+# =========================
+# REPORTING
 # =========================
 def print_console_summary(
     control_profile: Dict[str, object],
     test_profile: Dict[str, object],
     df: pd.DataFrame,
     means: pd.Series,
-    assumptions: Assumptions,
+    a: Assumptions,
     outcome: TestOutcome,
+    cohens_d: float,
+    power: float | None,
+    power_note: str,
 ) -> None:
-    """Recruiter-friendly console summary."""
     print("\n" + "=" * 72)
     print("A/B TEST — CONSOLE SUMMARY")
     print("=" * 72)
@@ -222,17 +259,25 @@ def print_console_summary(
     print(means)
 
     print("\n[Task 3 — Assumption Checks]")
-    print(f"Shapiro p (control): {assumptions.shapiro_control_p:.4f}")
-    print(f"Shapiro p (test):    {assumptions.shapiro_test_p:.4f}")
-    print(f"Levene p:            {assumptions.levene_p:.4f}")
-    print(f"Normality OK?        {assumptions.normality_ok}")
-    print(f"Equal variances?     {assumptions.equal_variances}")
+    print(f"Shapiro p (control): {a.shapiro_control_p:.4f}")
+    print(f"Shapiro p (test):    {a.shapiro_test_p:.4f}")
+    print(f"Levene p:            {a.levene_p:.4f}")
+    print(f"Normality OK?        {a.normality_ok}")
+    print(f"Equal variances?     {a.equal_variances}")
 
     print("\n[Task 3 — Hypothesis Test]")
     print(f"Test used: {outcome.test_name}")
     print(f"Statistic: {outcome.statistic:.4f}")
     print(f"p-value:   {outcome.p_value:.4f}")
     print(f"Decision:  {outcome.decision}")
+
+    print("\n[Advanced — Effect Size & Power]")
+    print(f"Cohen's d: {cohens_d:.4f} ({interpret_cohens_d(cohens_d)} effect)")
+    if power is None:
+        print(f"Power:     N/A ({power_note})")
+        print("Tip: Install statsmodels → pip install statsmodels")
+    else:
+        print(f"Power:     {power:.4f} ({interpret_power(power)})")
 
     print("\n[Task 4 — Recommendation]")
     print(outcome.recommendation)
@@ -241,58 +286,36 @@ def print_console_summary(
 
 
 def write_report_md(
-    control_profile: Dict[str, object],
-    test_profile: Dict[str, object],
     means: pd.Series,
-    assumptions: Assumptions,
+    a: Assumptions,
     outcome: TestOutcome,
+    cohens_d: float,
+    power: float | None,
+    power_note: str,
     out_path: str = "report.md",
 ) -> None:
-    """Write a clean Markdown report for GitHub."""
-    means_md = means.to_frame("mean").to_markdown()
+    means_table = (
+        "| group | mean_purchase |\n"
+        "|------:|--------------:|\n"
+        f"| control | {means.get('control', float('nan')):.6f} |\n"
+        f"| test | {means.get('test', float('nan')):.6f} |\n"
+    )
 
-    h0 = "H0: mean(Purchase_control) = mean(Purchase_test)"
-    h1 = "H1: mean(Purchase_control) != mean(Purchase_test)"
+    power_line = (
+        f"- Post-hoc power: **{power:.4f}** ({interpret_power(power)})"
+        if power is not None
+        else f"- Post-hoc power: **N/A** ({power_note}). Install statsmodels to enable."
+    )
 
     md = f"""# A/B Test Report — Maximum Bidding vs Average Bidding
 
-## Business Problem
-Facebook introduced **Average Bidding** as an alternative to **Maximum Bidding**.  
-This project evaluates whether Average Bidding improves **{METRIC}** for an e-commerce A/B test.
-
-## Project Scope & Tasks
-**Task 1 — Data Preparation & Exploration**
-- Loaded control/test data from Excel, validated schema, checked missing values and descriptive stats.
-
-**Task 2 — Hypothesis Definition**
-- {h0}  
-- {h1}
-
-**Task 3 — Assumptions & Statistical Testing (alpha={ALPHA})**
-- Shapiro–Wilk normality test per group
-- Levene variance homogeneity test
-- Test selection based on assumptions (t-test / Welch / Mann–Whitney)
-
-**Task 4 — Interpretation & Recommendation**
-- Business-friendly interpretation and actionable recommendation.
-
-## Data Quality
-- Control shape: {control_profile['shape']}
-- Test shape: {test_profile['shape']}
-- Missing (control): {control_profile['missing']}
-- Missing (test): {test_profile['missing']}
-
 ## Purchase Means
-{means_md}
+{means_table}
 
-## Assumption Checks
-- Shapiro p (control): {assumptions.shapiro_control_p:.4f}
-- Shapiro p (test):    {assumptions.shapiro_test_p:.4f}
-- Levene p-value:      {assumptions.levene_p:.4f}
-
-Derived:
-- Normality OK?    {assumptions.normality_ok}
-- Equal variances? {assumptions.equal_variances}
+## Assumption Checks (alpha={ALPHA})
+- Shapiro p (control): {a.shapiro_control_p:.4f}
+- Shapiro p (test):    {a.shapiro_test_p:.4f}
+- Levene p:            {a.levene_p:.4f}
 
 ## Hypothesis Test
 - Test used: **{outcome.test_name}**
@@ -300,40 +323,44 @@ Derived:
 - p-value: {outcome.p_value:.4f}
 - Decision: **{outcome.decision}**
 
+## Advanced Analysis
+- Cohen’s d: **{cohens_d:.4f}** ({interpret_cohens_d(cohens_d)} effect)
+{power_line}
+
 ## Recommendation
 {outcome.recommendation}
 """
-
     with open(out_path, "w", encoding="utf-8") as f:
         f.write(md)
 
 
 # =========================
-# ENTRY POINT
+# MAIN
 # =========================
 def main() -> None:
-    pd.set_option("display.max_columns", None)
-    pd.set_option("display.expand_frame_repr", False)
-
-    # Task 1 — Load + Validate + Profile
     control, test = load_data(FILE_PATH)
     validate_schema(control, test)
+
     control_profile = quick_profile(control)
     test_profile = quick_profile(test)
 
-    # Task 1 — Combine groups
     df = combine_groups(control, test)
-
-    # Task 2 — Means
     means = purchase_means(df)
 
-    # Task 3 — Assumptions + Test
-    assumptions = check_assumptions(df)
-    outcome = run_hypothesis_test(df, assumptions)
+    a = check_assumptions(df)
+    outcome = run_hypothesis_test(df, a)
 
-    # Reporting
-    print_console_summary(control_profile, test_profile, df, means, assumptions, outcome)
-    write_report_md(control_profile, test_profile, means, assumptions, outcome, out_path="report.md")
+    control_vals = df.loc[df["group"] == "control", METRIC]
+    test_vals = df.loc[df["group"] == "test", METRIC]
+
+    cohens_d = calculate_cohens_d(control_vals, test_vals)
+    power, power_note = calculate_posthoc_power(control_vals, test_vals)
+
+    print_console_summary(
+        control_profile, test_profile, df, means, a, outcome,
+        cohens_d, power, power_note
+    )
+    write_report_md(means, a, outcome, cohens_d, power, power_note)
 
 
 if __name__ == "__main__":
