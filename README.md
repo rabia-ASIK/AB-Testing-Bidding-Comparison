@@ -81,17 +81,13 @@ Although the test group shows a slightly higher average Purchase, the effect siz
 
 ---
 
-## 🛠️ How to Run the Project
 
-```bash
-pip install -r requirements.txt
-python ab_testing_analysis.py
+## 📊 Analysis Summary 
 
-## 📊 Visual Results
+This analysis focuses on statistical rigor rather than visual exploration.
 
-### Purchase Distribution
-![Purchase Distribution](https://raw.githubusercontent.com/rabia-ASIK/AB-Testing-Bidding-Comparison/main/images/fig1_purchase_distribution.png)
+After validating data quality and checking statistical assumptions (normality and variance homogeneity), an independent two-sample t-test was applied to compare Purchase conversions between the two bidding strategies.
 
-### Mean Purchase Comparison
-![Mean Purchase Comparison](https://raw.githubusercontent.com/rabia-ASIK/AB-Testing-Bidding-Comparison/main/images/fig2_mean_purchase.png)
+Although the test group (Average Bidding) shows a slightly higher mean Purchase value, the difference is not statistically significant. Additionally, the observed effect size is small and the statistical power is low, indicating that the experiment may not be sensitive enough to detect moderate differences.
 
+For this reason, conclusions are driven by statistical evidence and business relevance rather than visual patterns.
